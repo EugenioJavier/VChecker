@@ -11,6 +11,7 @@ import org.springframework.web.client.RestTemplate;
 
 
 
+
 public class VCheckerApplication {
 	
 	//parámetros de la aplicación. El nombre del fichero a procesar
@@ -68,6 +69,25 @@ public class VCheckerApplication {
 
 	private static boolean ComprobarConArchiva(String[] compLineas) {
 		// TODO Auto-generated method stub
+//		Componemos la url
+		Map<String, String> vars = new HashMap<String, String>();
+		vars.put("artifact", compLineas[0]);
+		vars.put("url",compLineas[2]);
+		String url="http://{url}:8080/restServices/browseService/searchArtifacts/{artifact}";
+		RestTemplate resttemplate=new RestTemplate();
+		String respuesta=resttemplate.getForObject(url, String.class,vars);
+		/**
+		  * Search artifacts with any property matching text. If repository is not provided the search runs in all
+		  * repositories. If exact is true only the artifacts whose property match exactly are returned.
+		  *
+		  * @param text
+		  * @param repositoryId
+		  * @param exact
+		  * @return
+		  * @throws ArchivaRestServiceException
+		  * @since 2.2
+		  */
+		System.out.println(respuesta);
 		return false;
 	}
 
@@ -84,51 +104,52 @@ public class VCheckerApplication {
 		Map<String, String> vars = new HashMap<String, String>();
 		vars.put("artifact", compLineas[0]);
 		vars.put("version", compLineas[1]);
-		String url="http://search.maven.org/solrsearch/select?q=g:”{artifact}”%20AND%20v:”{version}”&wt=json";
+		String url="";
+//		String url="http://search.maven.org/solrsearch/select?q=g:"org.kurento”%20AND%20a:"{artifact}"%20AND%20v:"{version}%20OR%20l:”javadoc”%20OR%20p:”jar”&rows=20&wt=json";
+//		String url="http://search.maven.org/solrsearch/select?q=g:”{artifact}” ANDv:”{version}”&wt=json";
+//		String url="http://search.maven.org/solrsearch/select?q=g:\"com.google.inject"%20AND%20a:\"guice\"%20AND%20v:\"3.0\" %20AND%20l:\"javadoc\"%20AND%20p:\"jar\"&rows=20&wt=json";
 		RestTemplate resttemplate=new RestTemplate();
 		String respuesta=resttemplate.getForObject(url, String.class,vars);
 		System.out.println(respuesta);
-		//la respuesta obtenida buscando el artefacto kurento-java en su versión 6.1.0 es la siguiente
-//		{
-//		    "responseHeader": {
-//		        "status": 0,
-//		        "QTime": 3,
-//		        "params": {
-//		            "spellcheck": "true",
-//		            "fl": "id,g,a,latestVersion,p,ec,repositoryId,text,timestamp,versionCount",
-//		            "sort": "score desc,timestamp desc,g asc,a asc",
-//		            "indent": "off",
-//		            "q": "g:??????kurento-java?????? AND v:??????6.1.0??????",
-//		            "qf": "text^20 g^5 a^10",
-//		            "spellcheck.count": "5",
-//		            "wt": "json",
-//		            "version": "2.2",
-//		            "defType": "dismax"
-//		        }
-//		    },
-//		    "response": {
-//		        "numFound": 0,
-//		        "start": 0,
-//		        "docs": []
-//		    },
-//		    "spellcheck": {
-//		        "suggestions": [
-//		            "java?",
-//		            {
-//		                "numFound": 5,
-//		                "startOffset": 8,
-//		                "endOffset": 21,
-//		                "suggestion": [
-//		                    "java",
-//		                    "javax",
-//		                    "javac",
-//		                    "javaz",
-//		                    "javaw"
-//		                ]
-//		            }
-//		        ]
-//		    }
-//		}
+		{
+		//url consulta http://search.maven.org/solrsearch/select?q=g:"org.kurento"%20AND%20a:"kurento-java"%20AND%20v:"6.1.0"%20OR%20l:"javadoc"%20OR%20p:"jar"&rows=20&wt=json
+
+//la respuesta obtenida (ejecutada consulta en postman) buscando el artefacto kurento-java en su versión 6.1.0 es la siguiente
+//	    "responseHeader": {
+//	        "status": 0,
+//	        "QTime": 1,
+//	        "params": {
+//	            "fl": "id,g,a,v,p,ec,timestamp,tags",
+//	            "sort": "score desc,timestamp desc,g asc,a asc,v desc",
+//	            "indent": "off",
+//	            "q": "g:\"org.kurento\" AND a:\"kurento-java\" AND v:\"6.1.0\" OR l:\"javadoc\" OR p:\"jar\"",
+//	            "wt": "json",
+//	            "rows": "20",
+//	            "version": "2.2"
+//	        }
+//	    },
+//	    "response": {
+//	        "numFound": 1,
+//	        "start": 0,
+//	        "docs": [
+//	            {
+//	                "id": "org.kurento:kurento-java:6.1.0",
+//	                "g": "org.kurento",
+//	                "a": "kurento-java",
+//	                "v": "6.1.0",
+//	                "p": "pom",
+//	                "timestamp": 1441197724000,
+//	                "tags": [
+//	                    "todo"
+//	                ],
+//	                "ec": [
+//	                    "-source-release.zip",
+//	                    ".pom"
+//	                ]
+//	            }
+//	        ]
+//	    }
+//	}
 		//procesamos la respuesta para hacer la comprobación y devolvemos el booleano adecuado
 		return false;
 	}
