@@ -3,6 +3,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,6 +25,7 @@ public class VCheckerApplication {
     public static void main(String[] args) {
         
     	boolean resultado=false;
+    	
     	
     	String fichero="./"+args[0];
     	resultado=ComprobarVersiones(fichero);
@@ -104,53 +112,81 @@ public class VCheckerApplication {
 		Map<String, String> vars = new HashMap<String, String>();
 		vars.put("artifact", compLineas[0]);
 		vars.put("version", compLineas[1]);
-		String url="";
-//		String url="http://search.maven.org/solrsearch/select?q=g:"org.kurento”%20AND%20a:"{artifact}"%20AND%20v:"{version}%20OR%20l:”javadoc”%20OR%20p:”jar”&rows=20&wt=json";
-//		String url="http://search.maven.org/solrsearch/select?q=g:”{artifact}” ANDv:”{version}”&wt=json";
-//		String url="http://search.maven.org/solrsearch/select?q=g:\"com.google.inject"%20AND%20a:\"guice\"%20AND%20v:\"3.0\" %20AND%20l:\"javadoc\"%20AND%20p:\"jar\"&rows=20&wt=json";
-		RestTemplate resttemplate=new RestTemplate();
-		String respuesta=resttemplate.getForObject(url, String.class,vars);
-		System.out.println(respuesta);
+		StringBuilder strBld=new StringBuilder();
+		strBld.append("http://search.maven.org/solrsearch/select?q=g:");
+		strBld.append((char)34);
+		strBld.append("org.kurento");
+		strBld.append((char)34);
+		strBld.append(" AND a:");
+		strBld.append((char)34);
+		strBld.append(compLineas[0]);
+		strBld.append((char)34);
+		strBld.append(" AND v:");
+		strBld.append((char)34);
+		strBld.append(compLineas[1]);
+		strBld.append((char)34);
+		strBld.append(" OR l:");
+		strBld.append((char)34);
+		strBld.append("javadoc");
+		strBld.append((char)34);
+		strBld.append(" OR l:");
+		strBld.append((char)34);
+		strBld.append("jar");
+		strBld.append((char)34);
+		strBld.append("&rows=20&wt=json");
+		
+		String ruta=strBld.toString();
+		ruta=ruta.replace(" ", "%20");
+		
+		try{
+			URL url=new URL(ruta);
+			URLConnection urlConection = url.openConnection();
+			InputStream is = urlConection.getInputStream();
+			String res=getStringFromInputStream(is);
+			System.out.println(res);
+		}catch (MalformedURLException ex){
+			ex.printStackTrace();
+		}catch(IOException ei){
+			ei.printStackTrace();
+		}
+		
 		{
-		//url consulta http://search.maven.org/solrsearch/select?q=g:"org.kurento"%20AND%20a:"kurento-java"%20AND%20v:"6.1.0"%20OR%20l:"javadoc"%20OR%20p:"jar"&rows=20&wt=json
-
-//la respuesta obtenida (ejecutada consulta en postman) buscando el artefacto kurento-java en su versión 6.1.0 es la siguiente
-//	    "responseHeader": {
-//	        "status": 0,
-//	        "QTime": 1,
-//	        "params": {
-//	            "fl": "id,g,a,v,p,ec,timestamp,tags",
-//	            "sort": "score desc,timestamp desc,g asc,a asc,v desc",
-//	            "indent": "off",
-//	            "q": "g:\"org.kurento\" AND a:\"kurento-java\" AND v:\"6.1.0\" OR l:\"javadoc\" OR p:\"jar\"",
-//	            "wt": "json",
-//	            "rows": "20",
-//	            "version": "2.2"
-//	        }
-//	    },
-//	    "response": {
-//	        "numFound": 1,
-//	        "start": 0,
-//	        "docs": [
-//	            {
-//	                "id": "org.kurento:kurento-java:6.1.0",
-//	                "g": "org.kurento",
-//	                "a": "kurento-java",
-//	                "v": "6.1.0",
-//	                "p": "pom",
-//	                "timestamp": 1441197724000,
-//	                "tags": [
-//	                    "todo"
-//	                ],
-//	                "ec": [
-//	                    "-source-release.zip",
-//	                    ".pom"
-//	                ]
-//	            }
-//	        ]
-//	    }
-//	}
-		//procesamos la respuesta para hacer la comprobación y devolvemos el booleano adecuado
+		//#############################################################################	
+		//en este punto res contiene un json correcto con lo devuelto por maven central
+		//#############################################################################
 		return false;
 	}
 }
+	
+	// convert InputStream to String
+		private static String getStringFromInputStream(InputStream is) {
+
+			BufferedReader br = null;
+			StringBuilder sb = new StringBuilder();
+
+			String line;
+			try {
+
+				br = new BufferedReader(new InputStreamReader(is));
+				while ((line = br.readLine()) != null) {
+					sb.append(line);
+				}
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				if (br != null) {
+					try {
+						br.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+
+			return sb.toString();
+
+		}
+
+	}
+
