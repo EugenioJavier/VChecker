@@ -7,11 +7,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
+
+import model.RespMavenCentral;
+import model.doc;
 
 import org.springframework.web.client.RestTemplate;
 
@@ -29,10 +34,15 @@ public class VCheckerApplication {
     	
     	String fichero="./"+args[0];
     	resultado=ComprobarVersiones(fichero);
-    	System.out.println(resultado);
+    	if(resultado){
+    		System.out.println("la versión es correcta");
+    	}else{
+    		System.out.println("la versión no es correcta");
+    	}    	
     }
 
 	private static boolean ComprobarVersiones(String fichero) {
+		boolean resultado=false;
 		//construimos el FileReader
 		File fich=null;
 		FileReader fr=null;
@@ -43,7 +53,7 @@ public class VCheckerApplication {
 			
 			//lectura del fichero
 			String linea;
-			boolean resultado=false;
+			
 			String delimitador="#";
 			//mientras haya lineas en el fichero
 			while ((linea=br.readLine())!=null) {
@@ -72,7 +82,7 @@ public class VCheckerApplication {
 	         }
 	      }
 		
-		return false;
+		return resultado;
 	}
 
 	private static boolean ComprobarConArchiva(String[] compLineas) {
@@ -82,8 +92,17 @@ public class VCheckerApplication {
 		vars.put("artifact", compLineas[0]);
 		vars.put("url",compLineas[2]);
 		String url="http://{url}:8080/restServices/browseService/searchArtifacts/{artifact}";
-		RestTemplate resttemplate=new RestTemplate();
-		String respuesta=resttemplate.getForObject(url, String.class,vars);
+		try {
+			URI uri=new URI(url);
+			RestTemplate resttemplate=new RestTemplate();
+			String respuesta=resttemplate.getForObject(uri, String.class);
+			System.out.println(respuesta);
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			//e.printStackTrace();
+			return false;
+		}
+		
 		/**
 		  * Search artifacts with any property matching text. If repository is not provided the search runs in all
 		  * repositories. If exact is true only the artifacts whose property match exactly are returned.
@@ -95,7 +114,7 @@ public class VCheckerApplication {
 		  * @throws ArchivaRestServiceException
 		  * @since 2.2
 		  */
-		System.out.println(respuesta);
+		
 		return false;
 	}
 
@@ -136,27 +155,36 @@ public class VCheckerApplication {
 		strBld.append("&rows=20&wt=json");
 		
 		String ruta=strBld.toString();
-		ruta=ruta.replace(" ", "%20");
 		
-		try{
+		try {			
 			URL url=new URL(ruta);
-			URLConnection urlConection = url.openConnection();
-			InputStream is = urlConection.getInputStream();
-			String res=getStringFromInputStream(is);
-			System.out.println(res);
-		}catch (MalformedURLException ex){
-			ex.printStackTrace();
-		}catch(IOException ei){
-			ei.printStackTrace();
+			String nullFragment = null;			
+			URI uri=new URI(url.getProtocol(), url.getHost(), url.getPath(), url.getQuery(),nullFragment );
+			RestTemplate resttemplate=new RestTemplate();
+			RespMavenCentral res=resttemplate.getForObject(uri, RespMavenCentral.class);
+			
+			
+			//################################################################################################
+			//en este punto res contiene un objeto RespMavenCentral correcto con lo devuelto por maven central
+			//################################################################################################
+			//comprobamos que el repositorio y la versión son los mismos.
+			doc dc=res.getResponse().getDocs().get(0);
+			String repo=dc.getA();
+			String version=dc.getV();
+			if (repo.equals(compLineas[0]) && version.equals(compLineas[1])){
+				return true;
+			}
+							
+		}catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		
-		{
-		//#############################################################################	
-		//en este punto res contiene un json correcto con lo devuelto por maven central
-		//#############################################################################
 		return false;
 	}
-}
+
 	
 	// convert InputStream to String
 		private static String getStringFromInputStream(InputStream is) {
