@@ -3,15 +3,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,9 +14,6 @@ import model.RespMavenCentral;
 import model.doc;
 
 import org.springframework.web.client.RestTemplate;
-
-
-
 
 
 public class VCheckerApplication {
@@ -46,10 +38,11 @@ public class VCheckerApplication {
 		//construimos el FileReader
 		File fich=null;
 		FileReader fr=null;
+		BufferedReader br=null;
 		try {
 			fich=new File(fichero);
 			fr = new FileReader(fich);
-			BufferedReader br=new BufferedReader(fr);
+			br=new BufferedReader(fr);
 			
 			//lectura del fichero
 			String linea;
@@ -76,6 +69,7 @@ public class VCheckerApplication {
 	         try{                    
 	            if( null != fr ){ 
 	               fr.close();
+	               br.close();
 	            }                  
 	         }catch (Exception e2){ 
 	            e2.printStackTrace();
@@ -161,18 +155,21 @@ public class VCheckerApplication {
 			String nullFragment = null;			
 			URI uri=new URI(url.getProtocol(), url.getHost(), url.getPath(), url.getQuery(),nullFragment );
 			RestTemplate resttemplate=new RestTemplate();
-			RespMavenCentral res=resttemplate.getForObject(uri, RespMavenCentral.class);
-			
+			RespMavenCentral res=resttemplate.getForObject(uri, RespMavenCentral.class);			
 			
 			//################################################################################################
 			//en este punto res contiene un objeto RespMavenCentral correcto con lo devuelto por maven central
 			//################################################################################################
-			//comprobamos que el repositorio y la versión son los mismos.
-			doc dc=res.getResponse().getDocs().get(0);
-			String repo=dc.getA();
-			String version=dc.getV();
-			if (repo.equals(compLineas[0]) && version.equals(compLineas[1])){
-				return true;
+			if(!(res.getResponse().getNumFound()==0)){
+				//comprobamos que el repositorio y la versión son los mismos.
+				doc dc=res.getResponse().getDocs().get(0);
+				String repo=dc.getA();
+				String version=dc.getV();
+				if (repo.equals(compLineas[0]) && version.equals(compLineas[1])){
+					return true;
+				}
+			}else{
+				return false;
 			}
 							
 		}catch (MalformedURLException e) {
@@ -185,36 +182,5 @@ public class VCheckerApplication {
 		return false;
 	}
 
-	
-	// convert InputStream to String
-		private static String getStringFromInputStream(InputStream is) {
-
-			BufferedReader br = null;
-			StringBuilder sb = new StringBuilder();
-
-			String line;
-			try {
-
-				br = new BufferedReader(new InputStreamReader(is));
-				while ((line = br.readLine()) != null) {
-					sb.append(line);
-				}
-
-			} catch (IOException e) {
-				e.printStackTrace();
-			} finally {
-				if (br != null) {
-					try {
-						br.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-
-			return sb.toString();
-
-		}
-
-	}
+}
 
