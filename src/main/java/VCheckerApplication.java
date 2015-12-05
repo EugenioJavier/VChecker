@@ -7,9 +7,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 
 import model.RespArchiva;
 import model.RespMavenCentral;
@@ -93,10 +91,7 @@ public class VCheckerApplication {
 	private static boolean CheckWithArchiva(String[] compLines) {
 		
 		//building the url
-		Map<String, String> vars = new HashMap<String, String>();
-		vars.put("artifact", compLines[0]);
-		vars.put("url",compLines[2]);
-		vars.put("version",compLines[1]);
+
 		String url="http://"+compLines[2]+":8080/restServices/archivaServices/browseService/versionsList/org.kurento/"+compLines[0];
 		try {
 			URI uri=new URI(url);
@@ -134,33 +129,7 @@ public class VCheckerApplication {
 //		http://search.maven.org/solrsearch/select?q=g:”com.google.inject”%20AND%20a:”guice”%20AND%20v:”3.0”%20AND%20l:”javadoc”%20AND%20p:”jar”&rows=20&wt=json
 		
 //		Componemos la url
-		Map<String, String> vars = new HashMap<String, String>();
-		vars.put("artifact", compLines[0]);
-		vars.put("version", compLines[1]);
-		StringBuilder strBld=new StringBuilder();
-		strBld.append("http://search.maven.org/solrsearch/select?q=g:");
-		strBld.append((char)34);
-		strBld.append("org.kurento");
-		strBld.append((char)34);
-		strBld.append(" AND a:");
-		strBld.append((char)34);
-		strBld.append(compLines[0]);
-		strBld.append((char)34);
-		strBld.append(" AND v:");
-		strBld.append((char)34);
-		strBld.append(compLines[1]);
-		strBld.append((char)34);
-		strBld.append(" OR l:");
-		strBld.append((char)34);
-		strBld.append("javadoc");
-		strBld.append((char)34);
-		strBld.append(" OR l:");
-		strBld.append((char)34);
-		strBld.append("jar");
-		strBld.append((char)34);
-		strBld.append("&rows=20&wt=json");
-		
-		String path=strBld.toString();
+		String path="http://search.maven.org/solrsearch/select?q=g:\"org.kurento\" AND a:\""+compLines[0]+"\" AND v:\""+compLines[1]+"\" OR l:\"javadoc\" OR l:\"jar\"&rows=20&wt=json";
 		
 		try {			
 			URL url=new URL(path);
