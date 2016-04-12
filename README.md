@@ -1,3 +1,10 @@
 # VChecker
-Java programa that checks if one version of one artifact has been uploades to one repository (Maven central or Archiva)
-@Param text file with the structures in each line artifact#version#urlRepository
+Java program that checks if one version of one artifact has been uploaded to one repository (Maven central or Archiva)
+@Param gets the data about the artifact from a json file with this structure
+
+      {"artifacts":[
+				{"artifact":"[artifactName]","version":"[artifactVersion]","server":"[ipServer]"},
+				...
+			]	
+		}
+

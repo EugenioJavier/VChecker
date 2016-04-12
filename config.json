@@ -1,0 +1,5 @@
+{"artifacts":[
+				{"artifact":"kurento-java","version":"6.1.1","server":"172.17.0.1"},
+				{"artifact":"kurento-java","version":"6.1.0","server":"search.maven.org"}
+			]	
+}

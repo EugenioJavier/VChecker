@@ -1,2 +1,0 @@
-kurento-java#6.1.1#172.17.0.1
-kurento-java#6.1.0#search.maven.org

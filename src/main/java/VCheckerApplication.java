@@ -1,7 +1,4 @@
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -11,11 +8,15 @@ import java.util.Iterator;
 
 import model.RespArchiva;
 import model.RespMavenCentral;
+import model.art;
+import model.artifactList;
 import model.doc;
 
 import org.springframework.web.client.RestTemplate;
 
-
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 /**
@@ -38,61 +39,48 @@ public class VCheckerApplication {
     }
 
 	private static boolean CheckVersions(String file) {
-		boolean result=false;
-		//building the FileReader
-		File fich=null;
-		FileReader fr=null;
-		BufferedReader br=null;
-		try {
-			fich=new File(file);
-			fr = new FileReader(fich);
-			br=new BufferedReader(fr);
-			
-			//reading the file
-			String line;
-			
-			String delimiter="#";
-			//While we find lines in the file
-			while ((line=br.readLine())!=null) {
-				String[]compLines=line.split(delimiter);
-				//artifact#version#url		
-				//Looking for the repository where the artifact must to be
-				if(compLines[2].equals("search.maven.org")){
-					result=CheckWithMaven(compLines);
-				}else{
-					result=CheckWithArchiva(compLines);
-				}					
-			}			
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}catch (IOException e) {
-			e.printStackTrace();
-		}finally{
-	         // closing the streams
-	         try{                    
-	            if( null != fr ){ 
-	               fr.close();
-	               br.close();
-	            }                  
-	         }catch (Exception e2){ 
-	            e2.printStackTrace();
-	         }
-	      }
-		
-		return result;
-	}
+		boolean comprobar=false;
 
-	
+		//We get the artifacts and the versions from config.json
+		ObjectMapper mapper = new ObjectMapper();			
+		artifactList al=null;
+		try {
+			al = mapper.readValue(new File(file), artifactList.class);
+		} catch (JsonParseException e) {
+		// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		//We construct an iterator with al to process all the artifacts contained in it
+		Iterator<art> it=al.getArtifacts().iterator();
+				
+		while(it.hasNext()){
+			art artefacto=it.next();
+			//We look at the server attribute to select the function that will process each artifact
+			if (artefacto.getServer().equals("search.maven.org")){
+				comprobar=CheckWithMaven(artefacto);
+			}else{
+				comprobar=CheckWithArchiva(artefacto);
+			}
+			if(!comprobar){
+				return comprobar; 
+			}			
+		}	
+		return comprobar;
+	}
 	/**
 	 * @param compLines, an array of strings artifact#version#Archiva url
 	 * @return	boolean that is true if the version of the artifact is in the Archiva url repository
 	 */
-	private static boolean CheckWithArchiva(String[] compLines) {
+	private static boolean CheckWithArchiva(art artefacto) {
 		
 		//building the url
-
-		String url="http://"+compLines[2]+":8080/restServices/archivaServices/browseService/versionsList/org.kurento/"+compLines[0];
+		String url="http://"+artefacto.getServer()+":8080/restServices/archivaServices/browseService/versionsList/org.kurento/"+artefacto.getArtifact();
 		try {
 			URI uri=new URI(url);
 			RestTemplate resttemplate=new RestTemplate();
@@ -103,7 +91,7 @@ public class VCheckerApplication {
 			Iterator<String> it=res.getVersions().iterator();
 			while(it.hasNext()){
 				String[]structure=it.next().split("-");
-				if(structure[0].equals(compLines[1])){
+				if(structure[0].equals(artefacto.getVersion())){
 					return true;
 				}
 			}
@@ -119,17 +107,17 @@ public class VCheckerApplication {
 	 * @param compLines, an array of strings artifact#version#mavencentral url
 	 * @return	boolean that is true if the version of the artifact is in the mavenCentral url repository
 	 */
-	private static boolean CheckWithMaven(String[] compLines) {
-//		Mimics searching by coordinate in Advanced Search.  This search 
-//		uses all coordinates (“g” for groupId, “a” for artifactId, “v” for version, 
-//				“p” for packaging, “l” for classifier) and uses “AND” to require all 
-//				terms by default.  Only one term is required for the search to work.  
-//				Terms can also be connected by “OR” separated to make them 
-//				optional 
-//		http://search.maven.org/solrsearch/select?q=g:”com.google.inject”%20AND%20a:”guice”%20AND%20v:”3.0”%20AND%20l:”javadoc”%20AND%20p:”jar”&rows=20&wt=json
-		
-//		Componemos la url
-		String path="http://search.maven.org/solrsearch/select?q=g:\"org.kurento\" AND a:\""+compLines[0]+"\" AND v:\""+compLines[1]+"\" OR l:\"javadoc\" OR l:\"jar\"&rows=20&wt=json";
+	private static boolean CheckWithMaven(art artefacto) {
+		//Mimics searching by coordinate in Advanced Search.  This search 
+		//uses all coordinates (“g” for groupId, “a” for artifactId, “v” for version, 
+		//		“p” for packaging, “l” for classifier) and uses “AND” to require all 
+		//		terms by default.  Only one term is required for the search to work.  
+		//		Terms can also be connected by “OR” separated to make them 
+		//		optional 
+		//http://search.maven.org/solrsearch/select?q=g:”com.google.inject”%20AND%20a:”guice”%20AND%20v:”3.0”%20AND%20l:”javadoc”%20AND%20p:”jar”&rows=20&wt=json
+				
+		//Componemos la url
+		String path="http://search.maven.org/solrsearch/select?q=g:\"org.kurento\" AND a:\""+artefacto.getArtifact()+"\" AND v:\""+artefacto.getVersion()+"\" OR l:\"javadoc\" OR l:\"jar\"&rows=20&wt=json";
 		
 		try {			
 			URL url=new URL(path);
@@ -139,14 +127,14 @@ public class VCheckerApplication {
 			RespMavenCentral res=resttemplate.getForObject(uri, RespMavenCentral.class);			
 			
 			//################################################################################################
-			// At this point res contains a correct RespArchiva object returned by mavencentral repository
+			// At this point res contains a correct RespMavenCentral object returned by mavencentral repository
 			//################################################################################################
 			if(!(res.getResponse().getNumFound()==0)){
-				//Checking the version and the artifact are the same.
+				//Checking if the version and the artifact are the same.
 				doc dc=res.getResponse().getDocs().get(0);
 				String repo=dc.getA();
 				String version=dc.getV();
-				if (repo.equals(compLines[0]) && version.equals(compLines[1])){
+				if (repo.equals(artefacto.getArtifact()) && version.equals(artefacto.getVersion())){
 					return true;
 				}
 			}else{
