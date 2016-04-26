@@ -30,15 +30,11 @@ public class VCheckerApplication {
     	boolean result=false;    	
     	
     	String file="./"+args[0];
-    	result=CheckVersions(file);
-    	if(result){
-    		System.out.println("The version is correct");
-    	}else{
-    		System.out.println("The version is incorrect");
-    	}    	
+    	CheckVersions(file);
+    	  	
     }
 
-	private static boolean CheckVersions(String file) {
+	private static void CheckVersions(String file) {
 		boolean comprobar=false;
 
 		//We get the artifacts and the versions from config.json
@@ -68,10 +64,14 @@ public class VCheckerApplication {
 				comprobar=CheckWithArchiva(artefacto);
 			}
 			if(!comprobar){
-				return comprobar; 
-			}			
+				 System.out.println("The artifact "+artefacto.getArtifact()+", version "+artefacto.getVersion()
+						 +" is notlocated in "+artefacto.getServer());
+			}else{
+				System.out.println("The artifact "+artefacto.getArtifact()+", version "+artefacto.getVersion()
+						 +" is located in "+artefacto.getServer());
+			}
 		}	
-		return comprobar;
+		
 	}
 	/**
 	 * @param compLines, an array of strings artifact#version#Archiva url
