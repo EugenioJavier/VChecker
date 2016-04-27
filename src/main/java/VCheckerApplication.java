@@ -24,21 +24,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * 
  */
 public class VCheckerApplication {	
-	//parámetros de la aplicación. El nombre del file a procesar
-    public static void main(String[] args) {
-        
-    	boolean result=false;    	
+	//Application parameters. The name of the file wich is going to be processed
+    public static void main(String[] args) {   	
     	
     	String file="./"+args[0];
-    	result=CheckVersions(file);
-    	if(result){
-    		System.out.println("The version is correct");
-    	}else{
-    		System.out.println("The version is incorrect");
-    	}    	
+    	CheckVersions(file);
+    	  	
     }
 
-	private static boolean CheckVersions(String file) {
+	private static void CheckVersions(String file) {
 		boolean comprobar=false;
 
 		//We get the artifacts and the versions from config.json
@@ -68,13 +62,17 @@ public class VCheckerApplication {
 				comprobar=CheckWithArchiva(artefacto);
 			}
 			if(!comprobar){
-				return comprobar; 
-			}			
+				 System.out.println("The artifact "+artefacto.getArtifact()+", version "+artefacto.getVersion()
+						 +" is notlocated in "+artefacto.getServer());
+			}else{
+				System.out.println("The artifact "+artefacto.getArtifact()+", version "+artefacto.getVersion()
+						 +" is located in "+artefacto.getServer());
+			}
 		}	
-		return comprobar;
+		
 	}
 	/**
-	 * @param compLines, an array of strings artifact#version#Archiva url
+	 * @param artefacto that is the artifact object wich we'll check
 	 * @return	boolean that is true if the version of the artifact is in the Archiva url repository
 	 */
 	private static boolean CheckWithArchiva(art artefacto) {
@@ -104,7 +102,7 @@ public class VCheckerApplication {
 	}
 
 	/**
-	 * @param compLines, an array of strings artifact#version#mavencentral url
+	 * @param artefacto that is the artifact object wich we'll check
 	 * @return	boolean that is true if the version of the artifact is in the mavenCentral url repository
 	 */
 	private static boolean CheckWithMaven(art artefacto) {
@@ -116,7 +114,7 @@ public class VCheckerApplication {
 		//		optional 
 		//http://search.maven.org/solrsearch/select?q=g:”com.google.inject”%20AND%20a:”guice”%20AND%20v:”3.0”%20AND%20l:”javadoc”%20AND%20p:”jar”&rows=20&wt=json
 				
-		//Componemos la url
+		//building the url
 		String path="http://search.maven.org/solrsearch/select?q=g:\"org.kurento\" AND a:\""+artefacto.getArtifact()+"\" AND v:\""+artefacto.getVersion()+"\" OR l:\"javadoc\" OR l:\"jar\"&rows=20&wt=json";
 		
 		try {			
